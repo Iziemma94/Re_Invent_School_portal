@@ -1,16 +1,22 @@
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 *.sqlite3
 *.log
 
-# Virtual environment
+# Virtual environments
 venv/
 .env/
+.venv/
 
 # Django static/media
 staticfiles/
 media/
 
+# Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
