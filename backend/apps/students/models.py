@@ -39,16 +39,34 @@ class TeacherProfile(models.Model):
 
     staff_id = models.CharField(max_length=30, unique=True)
 
+    # OLD FIELDS - keep temporarily so nothing breaks
     branch = models.ForeignKey(
         "core.Branch",
         on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        blank=True,
+        related_name="legacy_teacher_branch_profiles"
     )
 
     section = models.ForeignKey(
         "core.Section",
         on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        blank=True,
+        related_name="legacy_teacher_section_profiles"
+    )
+
+    # NEW FIELDS
+    branches = models.ManyToManyField(
+        "core.Branch",
+        blank=True,
+        related_name="teacher_profiles"
+    )
+
+    sections = models.ManyToManyField(
+        "core.Section",
+        blank=True,
+        related_name="teacher_profiles"
     )
 
     def __str__(self):

@@ -66,5 +66,23 @@ class ReportCardAdmin(admin.ModelAdmin):
 
 @admin.register(ResultPin)
 class ResultPinAdmin(admin.ModelAdmin):
-    list_display = ("student", "term", "pin", "is_used", "created_at")
-    list_filter = ("term", "is_used")
+    list_display = (
+        "student",
+        "term",
+        "pin",
+        "usage_count",
+        "max_usage",
+        "remaining_uses_display",
+        "created_at",
+    )
+    list_filter = ("term", "max_usage", "created_at")
+    search_fields = (
+        "student__user__full_name",
+        "student__user__username",
+        "student__admission_number",
+        "pin",
+    )
+
+    def remaining_uses_display(self, obj):
+        return obj.remaining_uses
+    remaining_uses_display.short_description = "Remaining Uses"

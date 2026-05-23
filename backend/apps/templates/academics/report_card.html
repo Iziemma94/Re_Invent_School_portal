@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Report Card</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      color: #1e293b;
+      margin: 30px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .header p {
+      margin: 4px 0;
+      color: #475569;
+    }
+
+    .student-info,
+    .remarks {
+      margin-bottom: 24px;
+    }
+
+    .student-info table,
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .student-info td {
+      padding: 6px 8px;
+      vertical-align: top;
+    }
+
+    .results-table th,
+    .results-table td {
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+      text-align: left;
+    }
+
+    .results-table th {
+      background: #f8fafc;
+    }
+
+    .summary {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    .remarks-box {
+      border: 1px solid #cbd5e1;
+      padding: 12px;
+      margin-top: 10px;
+      min-height: 60px;
+      background: #f8fafc;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>{{ school_name }}</h1>
+    <p>Student Report Card</p>
+    <p>{{ term_name }}</p>
+  </div>
+
+  <div class="student-info">
+    <table>
+      <tr>
+        <td><strong>Student Name:</strong> {{ student_name }}</td>
+        <td><strong>Admission No:</strong> {{ admission_number }}</td>
+      </tr>
+      <tr>
+        <td><strong>Branch:</strong> {{ branch_name }}</td>
+        <td><strong>Section:</strong> {{ section_name }}</td>
+      </tr>
+      <tr>
+        <td><strong>Class:</strong> {{ class_name }}</td>
+        <td><strong>Session:</strong> {{ session_name }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <table class="results-table">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>CA</th>
+        <th>Exam</th>
+        <th>Total</th>
+        <th>Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for result in results %}
+      <tr>
+        <td>{{ result.subject_name }}</td>
+        <td>{{ result.continuous_assessment }}</td>
+        <td>{{ result.exam_score }}</td>
+        <td>{{ result.total_score }}</td>
+        <td>{{ result.grade }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5">No results available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p class="summary">Average Score: {{ average_score }}</p>
+
+  <div class="remarks">
+    <p><strong>Class Teacher Remark</strong></p>
+    <div class="remarks-box">
+      {{ class_teacher_remark|default:"-" }}
+    </div>
+
+    <p><strong>Head Teacher Remark</strong></p>
+    <div class="remarks-box">
+      {{ head_teacher_remark|default:"-" }}
+    </div>
+
+    <p><strong>Performance Rating:</strong> {{ performance_rating|default:"-" }}</p>
+  </div>
+</body>
+</html>

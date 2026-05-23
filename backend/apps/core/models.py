@@ -69,3 +69,15 @@ class SchoolClass(models.Model):
     def __str__(self):
         arm_display = f" {self.arm}" if self.arm else ""
         return f"{self.name}{arm_display} - {self.branch.name}"
+    
+
+class Setting(models.Model):
+    category = models.CharField(max_length=50, default="general")
+    key = models.CharField(max_length=100, unique=True)
+    value = models.TextField()
+
+    class Meta:
+        ordering = ["category", "key"]
+
+    def __str__(self):
+        return f"{self.category}: {self.key}"
