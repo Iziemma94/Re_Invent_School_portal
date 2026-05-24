@@ -77,10 +77,10 @@ REST_FRAMEWORK = {
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+    "https://re-invent-school-frontend.vercel.app/",
 ]
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.onrender.com",
+    "https://re-invent-school-frontend.vercel.app/",
 ]
 
 
