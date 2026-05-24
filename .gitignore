@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Django
+staticfiles/
+media/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# Vercel
+.vercel/
+
+# Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
