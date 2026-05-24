@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -106,7 +106,7 @@ const AFFECTIVE_DEFAULTS = [
   "Perseverance",
 ];
 
-export default function StudentReportCardPreviewPage() {
+function StudentReportCardPreviewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const verifiedTermName = searchParams.get("term") || "All";
@@ -821,5 +821,21 @@ export default function StudentReportCardPreviewPage() {
         </div>
       </>
     </ProtectedRoute>
+  );
+}
+
+export default function StudentReportCardPreviewPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-100 px-4 py-8">
+          <div className="mx-auto w-full max-w-7xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm text-slate-500">Loading report card preview...</p>
+          </div>
+        </div>
+      }
+    >
+      <StudentReportCardPreviewContent />
+    </Suspense>
   );
 }
