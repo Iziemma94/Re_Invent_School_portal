@@ -1,3 +1,5 @@
+"""URL routes for account-related API endpoints."""
+
 from django.urls import path
 from .views import CurrentUserView
 
