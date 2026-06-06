@@ -232,9 +232,7 @@ export default function AdminAcademicsPage() {
               </Link>
             </div>
           </SectionCard>
-        </div>
-        
-        <div className="space-y-6">
+
           <SectionCard title="Academic Management">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {academicManagementLinks.map((item) => {
