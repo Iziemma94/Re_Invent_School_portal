@@ -17,19 +17,23 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [buttonHovered, setButtonHovered] = useState(false);
-  const [backHovered, setBackHovered] = useState(false);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     setSubmitting(true);
 
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE}/token/`,
-        { username, password }
-      );
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE;
+
+      if (!apiBase) {
+        throw new Error("NEXT_PUBLIC_API_BASE is not configured.");
+      }
+
+      const response = await axios.post(`${apiBase}/token/`, {
+        username,
+        password,
+      });
 
       saveTokens(response.data.access, response.data.refresh);
 
@@ -50,461 +54,153 @@ export default function LoginPage() {
     } finally {
       setSubmitting(false);
     }
-  };
+  }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #071633 0%, #0b1f4d 100%)",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        boxSizing: "border-box",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px 24px 12px",
-        }}
-      >
-        <section
-          style={{
-            width: "100%",
-            maxWidth: "1200px",
-            minHeight: "720px",
-            background: "#0b1020",
-            borderRadius: "30px",
-            overflow: "hidden",
-            display: "grid",
-            gridTemplateColumns: "1fr 1.1fr",
-            boxShadow: "0 28px 70px rgba(0,0,0,0.4)",
-          }}
-        >
-          {/* LEFT PANEL */}
-          <div
-            style={{
-              background: "linear-gradient(180deg, #050b18 0%, #071126 100%)",
-              color: "white",
-              padding: "40px 52px 56px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              position: "relative",
-            }}
-          >
-            <div style={{ width: "100%", maxWidth: "370px" }}>
-              <button
-                type="button"
-                onMouseEnter={() => setBackHovered(true)}
-                onMouseLeave={() => setBackHovered(false)}
-                onClick={() => router.push("/")}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  background: backHovered
-                    ? "rgba(255,255,255,0.12)"
-                    : "transparent",
-                  color: "rgba(255,255,255,0.9)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  borderRadius: "999px",
-                  padding: "10px 16px",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 0.25s ease",
-                  marginBottom: "28px",
-                }}
-              >
-                <ArrowLeft size={16} />
-                Back Home
-              </button>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  marginBottom: "30px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "108px",
-                    height: "108px",
-                    borderRadius: "999px",
-                    background: "rgba(255,255,255,0.96)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow:
-                      "0 0 0 8px rgba(37,99,235,0.12), 0 14px 35px rgba(37,99,235,0.25)",
-                    overflow: "hidden",
-                  }}
+    <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-[#071633] to-[#0b1f4d] font-sans">
+      <div className="flex min-h-screen flex-col">
+        <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6 lg:px-8">
+          <section className="grid w-full max-w-6xl overflow-hidden rounded-[2rem] bg-[#0b1020] shadow-2xl lg:min-h-[720px] lg:grid-cols-[1fr_1.1fr]">
+            {/* LEFT PANEL */}
+            <div className="flex items-center justify-center bg-gradient-to-b from-[#050b18] to-[#071126] px-5 py-8 text-white sm:px-8 lg:px-12">
+              <div className="w-full max-w-md">
+                <button
+                  type="button"
+                  onClick={() => router.push("/")}
+                  className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white/90 transition hover:bg-white/10"
                 >
-                  <div
-                    style={{
-                      position: "relative",
-                      width: "78px",
-                      height: "78px",
-                    }}
-                  >
+                  <ArrowLeft size={16} />
+                  Back Home
+                </button>
+
+                <div className="mb-8 flex justify-center">
+                  <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_0_0_8px_rgba(37,99,235,0.12),0_14px_35px_rgba(37,99,235,0.25)]">
+                    <div className="relative h-20 w-20">
+                      <Image
+                        src="/school-logo.jpeg"
+                        alt="School logo"
+                        fill
+                        className="object-contain"
+                        priority
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur sm:p-8">
+                  <h1 className="text-4xl font-extrabold leading-tight text-white sm:text-5xl">
+                    Login
+                  </h1>
+
+                  <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base">
+                    Enter your login details to access your dashboard.
+                  </p>
+
+                  <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-white/90">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Enter username"
+                        required
+                        autoComplete="username"
+                        className="w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-4 text-base text-white outline-none transition placeholder:text-white/40 focus:border-blue-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-white/90">
+                        Password
+                      </label>
+
+                      <div className="flex items-center rounded-2xl border border-white/10 bg-white/[0.05] px-4 transition focus-within:border-blue-400">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Enter password"
+                          required
+                          autoComplete="current-password"
+                          className="w-full bg-transparent py-4 pr-3 text-base text-white outline-none placeholder:text-white/40"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="flex items-center text-white/70 transition hover:text-white"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {error && (
+                      <div className="rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                        {error}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-blue-400 px-5 py-4 text-base font-bold text-white shadow-[0_14px_30px_rgba(37,99,235,0.3)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(37,99,235,0.38)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+                    >
+                      {submitting ? "Signing in..." : "Login"}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT PANEL */}
+            <div className="relative hidden overflow-hidden bg-gradient-to-br from-blue-700 via-blue-500 to-sky-400 p-10 lg:flex lg:items-center lg:justify-center">
+              <div className="pointer-events-none absolute inset-0 opacity-10">
+                <div className="absolute -left-12 -top-12 h-72 w-72 rounded-full bg-white" />
+                <div className="absolute right-8 top-14 h-64 w-64 rounded-full bg-white" />
+                <div className="absolute bottom-8 left-10 h-72 w-72 rounded-full bg-white" />
+                <div className="absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-white" />
+              </div>
+
+              <div className="relative z-10 flex h-full w-full max-w-xl flex-col justify-between">
+                <div>
+                  <h2 className="text-5xl font-extrabold leading-none text-white xl:text-6xl">
+                    Welcome to Re-Invent
+                  </h2>
+
+                  <p className="mt-3 text-4xl font-light leading-tight text-white/95 xl:text-5xl">
+                    schools portal
+                  </p>
+
+                  <p className="mt-5 max-w-lg text-base leading-7 text-white/85">
+                    Use your assigned portal credentials to access student,
+                    teacher, or administrator features.
+                  </p>
+                </div>
+
+                <div className="mt-8 overflow-hidden rounded-[1.75rem] border border-white/20 bg-white/10 p-3 shadow-2xl backdrop-blur">
+                  <div className="relative h-[340px] w-full overflow-hidden rounded-[1.35rem]">
                     <Image
-                      src="/school-logo.jpeg"
-                      alt="School logo"
+                      src="/dark2.jpg"
+                      alt="Portal illustration"
                       fill
-                      style={{ objectFit: "contain" }}
+                      className="object-cover contrast-105 saturate-105"
                       priority
                     />
+                    <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 to-blue-600/20" />
                   </div>
                 </div>
               </div>
-
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: "26px",
-                  padding: "28px",
-                  boxShadow: "0 18px 50px rgba(0,0,0,0.22)",
-                  backdropFilter: "blur(8px)",
-                }}
-              >
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "50px",
-                    fontWeight: 800,
-                    lineHeight: 1.05,
-                    color: "white",
-                  }}
-                >
-                  Login
-                </h1>
-
-                <p
-                  style={{
-                    marginTop: "14px",
-                    marginBottom: "30px",
-                    color: "rgba(255,255,255,0.72)",
-                    fontSize: "16px",
-                  }}
-                >
-                  Enter your login details to access your dashboard.
-                </p>
-
-                <form onSubmit={handleSubmit}>
-                  <div style={{ marginBottom: "18px" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "10px",
-                        fontSize: "14px",
-                        color: "rgba(255,255,255,0.86)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Enter username"
-                      required
-                      style={{
-                        width: "100%",
-                        background: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        borderRadius: "16px",
-                        color: "white",
-                        fontSize: "16px",
-                        padding: "16px 18px",
-                        outline: "none",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ marginBottom: "18px" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "10px",
-                        fontSize: "14px",
-                        color: "rgba(255,255,255,0.86)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Password
-                    </label>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        background: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        borderRadius: "16px",
-                        padding: "0 16px",
-                      }}
-                    >
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter password"
-                        required
-                        style={{
-                          width: "100%",
-                          background: "transparent",
-                          border: "none",
-                          color: "white",
-                          fontSize: "16px",
-                          padding: "16px",
-                          outline: "none",
-                          
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          color: "rgba(255,255,255,0.7)",
-                          cursor: "pointer",
-                          padding: "0 0 0 12px",
-                          display: "flex",
-                          alignItems: "center",
-                        }}
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {error && (
-                    <div
-                      style={{
-                        marginTop: "18px",
-                        marginBottom: "18px",
-                        borderRadius: "14px",
-                        background: "rgba(220,38,38,0.12)",
-                        border: "1px solid rgba(248,113,113,0.25)",
-                        color: "#fca5a5",
-                        padding: "12px 14px",
-                        fontSize: "14px",
-                      }}
-                    >
-                      {error}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    onMouseEnter={() => setButtonHovered(true)}
-                    onMouseLeave={() => setButtonHovered(false)}
-                    style={{
-                      width: "100%",
-                      marginTop: "20px",
-                      background: submitting
-                        ? "linear-gradient(135deg, #3b82f6, #60a5fa)"
-                        : "linear-gradient(135deg, #2563eb, #3b82f6)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "16px",
-                      padding: "16px 20px",
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      cursor: submitting ? "not-allowed" : "pointer",
-                      opacity: submitting ? 0.85 : 1,
-                      boxShadow: buttonHovered
-                        ? "0 18px 36px rgba(37,99,235,0.38)"
-                        : "0 14px 30px rgba(37,99,235,0.3)",
-                      transform:
-                        buttonHovered && !submitting
-                          ? "translateY(-2px)"
-                          : "translateY(0)",
-                      transition: "all 0.25s ease",
-                    }}
-                  >
-                    {submitting ? "Signing in..." : "Login"}
-                  </button>
-                </form>
-              </div>
             </div>
-          </div>
+          </section>
+        </div>
 
-          {/* RIGHT PANEL */}
-          <div
-            style={{
-              background:
-                "linear-gradient(135deg, #2563eb 0%, #3b82f6 42%, #60a5fa 100%)",
-              position: "relative",
-              overflow: "hidden",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "48px",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                opacity: 0.12,
-                pointerEvents: "none",
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  top: "-40px",
-                  left: "-40px",
-                  width: "260px",
-                  height: "260px",
-                  borderRadius: "999px",
-                  background: "white",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  top: "50px",
-                  right: "30px",
-                  width: "230px",
-                  height: "230px",
-                  borderRadius: "999px",
-                  background: "white",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "-30px",
-                  left: "30px",
-                  width: "250px",
-                  height: "250px",
-                  borderRadius: "999px",
-                  background: "white",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "30px",
-                  right: "-30px",
-                  width: "250px",
-                  height: "250px",
-                  borderRadius: "999px",
-                  background: "white",
-                }}
-              />
-            </div>
-
-            <div
-              style={{
-                position: "relative",
-                zIndex: 1,
-                width: "100%",
-                maxWidth: "540px",
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <div>
-                <h2
-                  style={{
-                    margin: 0,
-                    fontSize: "64px",
-                    fontWeight: 800,
-                    lineHeight: 0.95,
-                    color: "white",
-                  }}
-                >
-                  Welcome to Re-Invent
-                </h2>
-                <p
-                  style={{
-                    margin: "8px 0 0 0",
-                    fontSize: "58px",
-                    lineHeight: 1,
-                    color: "rgba(255,255,255,0.95)",
-                    fontWeight: 300,
-                  }}
-                >
-                  schools portal
-                </p>
-
-                <p
-                  style={{
-                    marginTop: "18px",
-                    color: "rgba(255,255,255,0.84)",
-                    fontSize: "18px",
-                  }}
-                >
-                  Use your assigned portal credentials to access student,
-                  teacher, or administrator features.
-                </p>
-              </div>
-
-              <div
-                style={{
-                  marginTop: "26px",
-                  borderRadius: "28px",
-                  overflow: "hidden",
-                  background: "rgba(255,255,255,0.12)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  padding: "12px",
-                  boxShadow: "0 18px 40px rgba(0,0,0,0.12)",
-                  backdropFilter: "blur(6px)",
-                }}
-              >
-                <div
-                  style={{
-                    position: "relative",
-                    width: "100%",
-                    height: "340px",
-                    borderRadius: "22px",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Image
-                    src="/dark2.jpg"
-                    alt="Portal illustration"
-                    fill
-                    style={{
-                      objectFit: "cover",
-                      filter: "saturate(1.02) contrast(1.02)",
-                    }}
-                    priority
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background:
-                        "linear-gradient(180deg, rgba(37,99,235,0.08), rgba(37,99,235,0.14))",
-                      pointerEvents: "none",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <AppFooter />
       </div>
-
-      <AppFooter />
     </main>
   );
 }
