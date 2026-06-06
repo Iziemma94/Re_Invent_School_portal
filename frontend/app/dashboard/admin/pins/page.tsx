@@ -167,9 +167,7 @@ export default function AdminPinsPage() {
               </Link>
             </div>
           </SectionCard>
-        </div>
-        
-        <div className="space-y-6">
+
           <SectionCard title="Generate Result PIN">
             {loading ? (
               <p className="text-sm text-slate-500">Loading form data...</p>

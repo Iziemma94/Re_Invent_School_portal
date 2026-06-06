@@ -86,9 +86,7 @@ export default function StudentNotesPage() {
               </Link>
             </div>
           </SectionCard>
-        </div>
 
-        <div className="space-y-6">
           <SectionCard title="Notes Overview">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

@@ -424,20 +424,6 @@ export default function TeacherClassTeacherRemarksPage() {
           </p>
         </div>
 
-        <div className="space-y-6">
-          <SectionCard title="Navigation">
-            <div className="flex items-center justify-between gap-4">
-              <Link
-              href="/dashboard/teacher"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                <ArrowLeft size={16} />
-                Back to Dashboard
-              </Link>
-            </div>
-          </SectionCard>
-        </div>
-
         <div className="grid gap-6 xl:grid-cols-2">
           <div>
             <h5 className="mb-3 text-sm font-semibold text-slate-800">Psychomotor</h5>
@@ -508,6 +494,20 @@ export default function TeacherClassTeacherRemarksPage() {
         subtext="Manage class teacher remarks, attendance, promotion details, and primary traits"
         sidebarItems={teacherSidebarItems}
       >
+         <div className="space-y-6">
+          <SectionCard title="Navigation">
+            <div className="flex items-center justify-between gap-4">
+              <Link
+              href="/dashboard/teacher"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <ArrowLeft size={16} />
+                Back to Dashboard
+              </Link>
+            </div>
+          </SectionCard>
+        </div>
+        
         {loading && <p>Loading class teacher page...</p>}
         {error && <p className="text-red-600">{error}</p>}
         {success && <p className="text-green-600">{success}</p>}

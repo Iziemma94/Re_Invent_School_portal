@@ -98,9 +98,7 @@ export default function TeacherAssignmentsPage() {
               </Link>
             </div>
           </SectionCard>
-        </div>
 
-        <div className="space-y-6">
           <SectionCard title="Teacher Information">
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-3 text-sm text-slate-700">

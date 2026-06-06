@@ -142,9 +142,7 @@ export default function CheckResultPage() {
               </Link>
             </div>
           </SectionCard>
-        </div>
-        
-        <div className="space-y-6">
+
           <SectionCard title="Result PIN Verification">
             <div className="max-w-2xl">
               <p className="mb-6 text-sm text-slate-600">

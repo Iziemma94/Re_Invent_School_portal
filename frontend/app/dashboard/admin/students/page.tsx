@@ -379,9 +379,7 @@ export default function AdminStudentsPage() {
               </Link>
             </div>
           </SectionCard>
-        </div>
-        
-        <div className="space-y-6">
+
           <SectionCard title="Students Overview">
             <div className="grid gap-4 md:grid-cols-4">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

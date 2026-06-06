@@ -478,9 +478,7 @@ export default function AdminTeachersPage() {
               </Link>
             </div>
           </SectionCard>
-        </div>
-        
-        <div className="space-y-6">
+
           <SectionCard title="Teachers Overview">
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

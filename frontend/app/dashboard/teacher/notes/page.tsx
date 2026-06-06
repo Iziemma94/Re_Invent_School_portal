@@ -149,9 +149,7 @@ export default function TeacherNotesPage() {
               </Link>
             </div>
           </SectionCard>
-        </div>
 
-        <div className="space-y-6">
           <SectionCard title="Upload New Note">
             {loading ? (
               <p className="text-sm text-slate-500">Loading form data...</p>

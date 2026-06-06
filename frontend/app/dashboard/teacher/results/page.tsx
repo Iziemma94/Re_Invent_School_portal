@@ -168,9 +168,7 @@ export default function TeacherResultsPage() {
               </Link>
             </div>
           </SectionCard>
-        </div>
-        
-        <div className="space-y-6">
+
           <SectionCard title="Upload Student Result">
             {loading ? (
               <p className="text-sm text-slate-500">Loading form data...</p>
