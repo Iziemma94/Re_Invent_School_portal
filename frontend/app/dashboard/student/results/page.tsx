@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -12,6 +13,7 @@ import {
   CreditCard,
   Search,
   Key,
+  ArrowLeft,
 } from "lucide-react";
 
 interface ResultItem {
@@ -103,6 +105,20 @@ export default function StudentResultsPage() {
         subtext="View all your academic results"
         sidebarItems={studentSidebarItems}
       >
+        <div className="space-y-6">
+          <SectionCard title="Navigation">
+            <div className="flex items-center justify-between gap-4">
+              <Link
+              href="/dashboard/student"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <ArrowLeft size={16} />
+                Back to Dashboard
+              </Link>
+            </div>
+          </SectionCard>
+        </div>
+        
         <div className="space-y-6">
           <SectionCard title="Results Overview">
             <div className="grid gap-4 md:grid-cols-3">

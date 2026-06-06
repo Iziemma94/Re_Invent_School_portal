@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -10,6 +11,7 @@ import {
   BookOpen,
   ClipboardList,
   FileText,
+  ArrowLeft,
 } from "lucide-react";
 
 interface TeacherProfile {
@@ -84,6 +86,20 @@ export default function TeacherAssignmentsPage() {
         subtext="View the classes and subjects assigned to you"
         sidebarItems={teacherSidebarItems}
       >
+        <div className="space-y-6">
+          <SectionCard title="Navigation">
+            <div className="flex items-center justify-between gap-4">
+              <Link
+              href="/dashboard/teacher"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <ArrowLeft size={16} />
+                Back to Dashboard
+              </Link>
+            </div>
+          </SectionCard>
+        </div>
+
         <div className="space-y-6">
           <SectionCard title="Teacher Information">
             <div className="grid gap-6 md:grid-cols-2">

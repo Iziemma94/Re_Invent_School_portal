@@ -17,6 +17,7 @@ import {
   Receipt,
   BarChart3,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 
 const adminSidebarItems = [
@@ -69,6 +70,20 @@ export default function AdminFinanceLandingPage() {
         subtext="Manage fee structures, student fee assignments, and payments"
         sidebarItems={adminSidebarItems}
       >
+        <div className="space-y-6">
+          <SectionCard title="Navigation">
+            <div className="flex items-center justify-between gap-4">
+              <Link
+              href="/dashboard/admin"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <ArrowLeft size={16} />
+                Back to Dashboard    
+              </Link>
+            </div>
+          </SectionCard>
+        </div>
+        
         <div className="space-y-6">
           <SectionCard title="Finance Modules">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

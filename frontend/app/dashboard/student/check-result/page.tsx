@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -21,6 +22,7 @@ import {
   CreditCard,
   Key,
   Eye,
+  ArrowLeft,
 } from "lucide-react";
 
 const studentSidebarItems = [
@@ -128,6 +130,20 @@ export default function CheckResultPage() {
         subtext="Enter your result PIN to access your report card"
         sidebarItems={studentSidebarItems}
       >
+        <div className="space-y-6">
+          <SectionCard title="Navigation">
+            <div className="flex items-center justify-between gap-4">
+              <Link
+              href="/dashboard/sudent"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <ArrowLeft size={16} />
+                Back to Dashboard
+              </Link>
+            </div>
+          </SectionCard>
+        </div>
+        
         <div className="space-y-6">
           <SectionCard title="Result PIN Verification">
             <div className="max-w-2xl">

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -26,6 +27,7 @@ import {
   Search,
   Plus,
   X,
+  ArrowLeft,
 } from "lucide-react";
 import { AxiosError } from "axios";
 
@@ -365,6 +367,20 @@ export default function AdminStudentsPage() {
         subtext="View and manage all student records"
         sidebarItems={adminSidebarItems}
       >
+        <div className="space-y-6">
+          <SectionCard title="Navigation">
+            <div className="flex items-center justify-between gap-4">
+              <Link
+              href="/dashboard/admin"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <ArrowLeft size={16} />
+                Back to Dashboard 
+              </Link>
+            </div>
+          </SectionCard>
+        </div>
+        
         <div className="space-y-6">
           <SectionCard title="Students Overview">
             <div className="grid gap-4 md:grid-cols-4">
