@@ -80,11 +80,11 @@ REST_FRAMEWORK = {
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "https://re-invent-school-frontend.vercel.app",
-    "re-invent-school-portal.vercel.app",
+    "https://re-invent-school-portal.vercel.app",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://re-invent-school-frontend.vercel.app",
-    "re-invent-school-portal.vercel.app",
+    "https://re-invent-school-portal.vercel.app",
 ]
 
 
