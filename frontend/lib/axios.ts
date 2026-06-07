@@ -1,8 +1,10 @@
-//This is the core API client. It: adds the access token automatically, refreshes expired tokens, sends users back to login when auth fails
+// This is the core API client. It adds the access token automatically,
+// refreshes expired tokens, and sends users back to login when auth fails.
+
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE,
+  baseURL: `${process.env.NEXT_PUBLIC_API_BASE}/api`,
 });
 
 api.interceptors.request.use(
@@ -44,7 +46,7 @@ api.interceptors.response.use(
         }
 
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE}/token/refresh/`,
+          `${process.env.NEXT_PUBLIC_API_BASE}/api/token/refresh/`,
           { refresh }
         );
 
