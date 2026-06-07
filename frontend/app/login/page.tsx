@@ -19,42 +19,36 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError("");
-    setSubmitting(true);
+  e.preventDefault();
+  setError("");
+  setSubmitting(true);
 
-    try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE;
+  try {
+    const response = await api.post("/token/", {
+      username,
+      password,
+    });
 
-      if (!apiBase) {
-        throw new Error("NEXT_PUBLIC_API_BASE is not configured.");
-      }
+    saveTokens(response.data.access, response.data.refresh);
 
-      const response = await api.post("/token/", {
-        username,
-        password,
-  });
+    const currentUser = await getCurrentUser();
 
-      saveTokens(response.data.access, response.data.refresh);
-
-      const currentUser = await getCurrentUser();
-
-      if (currentUser.role === "student") {
-        router.push("/dashboard/student");
-      } else if (currentUser.role === "teacher") {
-        router.push("/dashboard/teacher");
-      } else if (currentUser.role === "admin") {
-        router.push("/dashboard/admin");
-      } else {
-        router.push("/");
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Invalid username or password.");
-    } finally {
-      setSubmitting(false);
+    if (currentUser.role === "student") {
+      router.push("/dashboard/student");
+    } else if (currentUser.role === "teacher") {
+      router.push("/dashboard/teacher");
+    } else if (currentUser.role === "admin") {
+      router.push("/dashboard/admin");
+    } else {
+      router.push("/");
     }
+  } catch (err) {
+    console.error(err);
+    setError("Invalid username or password.");
+  } finally {
+    setSubmitting(false);
   }
+}
 
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-[#071633] to-[#0b1f4d] font-sans">
