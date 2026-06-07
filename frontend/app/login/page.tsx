@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import axios from "axios";
+import api from "@/lib/axios";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { saveTokens } from "@/lib/auth";
 import { getCurrentUser } from "@/services/accountService";
@@ -30,10 +30,10 @@ export default function LoginPage() {
         throw new Error("NEXT_PUBLIC_API_BASE is not configured.");
       }
 
-      const response = await axios.post(`${apiBase}/token/`, {
+      const response = await api.post("/token/", {
         username,
         password,
-      });
+  });
 
       saveTokens(response.data.access, response.data.refresh);
 
