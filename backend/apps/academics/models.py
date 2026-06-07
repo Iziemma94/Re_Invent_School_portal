@@ -1,6 +1,7 @@
 # Create your models here.
 from decimal import Decimal, ROUND_HALF_UP
 from django.db import models
+from cloudinary_storage.storage import RawMediaCloudinaryStorage
 import uuid
 
 
@@ -101,7 +102,10 @@ class Note(models.Model):
         on_delete=models.CASCADE,
         related_name="notes"
     )
-    file = models.FileField(upload_to="notes/")
+    file = models.FileField(
+    upload_to="notes/",
+    storage=RawMediaCloudinaryStorage(),
+)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
