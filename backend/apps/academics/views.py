@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from django.db.models import Q
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 
@@ -1359,8 +1360,15 @@ class StudentReportCardPDFView(APIView):
 
         if term_name and term_name != "All":
             normalized_term = term_name.lower().split()[0]
-            results_qs = results_qs.filter(term__name=normalized_term)
-            report_card = report_cards_qs.filter(term__name=normalized_term).first()
+            
+            term_filter = (
+                Q(term__name__iexact=term_name)
+                | Q(term__name__iexact=normalized_term)
+                | Q(term__name__icontains=normalized_term)
+            )
+            
+            results_qs = results_qs.filter(term_filter)
+            report_card = report_cards_qs.filter(term_filter).first()
         else:
             report_card = report_cards_qs.first()
 
