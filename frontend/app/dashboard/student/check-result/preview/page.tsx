@@ -229,24 +229,51 @@ function StudentReportCardPreviewContent() {
     setDownloadingPdf(true);
     setError("");
 
-    function normalizeTerm(value: string) {
-      return value.toLowerCase().replace(" term", "").trim();
-    }
-
     const latestReportCards = await getStudentReportCards();
 
-    const selectedReportCard = latestReportCards.find((item: { id: number; term_name: string }) => {
-      return normalizeTerm(item.term_name) === normalizeTerm(verifiedTermName);
+    console.log("verifiedTermName:", verifiedTermName);
+    console.log("latestReportCards:", latestReportCards);
+
+    const selectedReportCard = latestReportCards.find((item: any) => {
+      const possibleTermNames = [
+        item.term_name,
+        item.term,
+        item.name,
+        item.term_display,
+      ]
+        .filter(Boolean)
+        .map((value) => String(value).toLowerCase());
+
+      const selected = verifiedTermName.toLowerCase();
+      const selectedShort = selected.replace(" term", "").trim();
+
+      return possibleTermNames.some((termValue: string) => {
+        const cleaned = termValue.replace(" term", "").trim();
+
+        return (
+          termValue === selected ||
+          cleaned === selectedShort ||
+          termValue.includes(selectedShort) ||
+          selected.includes(cleaned)
+        );
+      });
     });
 
     if (!selectedReportCard) {
+      console.log("Could not match report card.");
       console.log("verifiedTermName:", verifiedTermName);
       console.log("latestReportCards:", latestReportCards);
+
       setError("Could not find the selected report card.");
       return;
     }
 
-    const blob = await downloadStudentReportCardPdf(selectedReportCard.id);
+    console.log("Selected Report Card:", selectedReportCard);
+
+    const blob = await downloadStudentReportCardPdf(
+      selectedReportCard.id
+    );
+
     const url = window.URL.createObjectURL(blob);
 
     const link = document.createElement("a");
