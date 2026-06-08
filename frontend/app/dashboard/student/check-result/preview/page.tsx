@@ -233,13 +233,15 @@ function StudentReportCardPreviewContent() {
       return value.toLowerCase().replace(" term", "").trim();
     }
 
-    const selectedReportCard = reportCards.find((item) => {
+    const latestReportCards = await getStudentReportCards();
+
+    const selectedReportCard = latestReportCards.find((item: { id: number; term_name: string }) => {
       return normalizeTerm(item.term_name) === normalizeTerm(verifiedTermName);
     });
 
     if (!selectedReportCard) {
       console.log("verifiedTermName:", verifiedTermName);
-      console.log("reportCards:", reportCards);
+      console.log("latestReportCards:", latestReportCards);
       setError("Could not find the selected report card.");
       return;
     }
