@@ -229,11 +229,17 @@ function StudentReportCardPreviewContent() {
     setDownloadingPdf(true);
     setError("");
 
-    const selectedReportCard = reportCards.find(
-      (item) => item.term_name === verifiedTermName
-    );
+    function normalizeTerm(value: string) {
+      return value.toLowerCase().replace(" term", "").trim();
+    }
+
+    const selectedReportCard = reportCards.find((item) => {
+      return normalizeTerm(item.term_name) === normalizeTerm(verifiedTermName);
+    });
 
     if (!selectedReportCard) {
+      console.log("verifiedTermName:", verifiedTermName);
+      console.log("reportCards:", reportCards);
       setError("Could not find the selected report card.");
       return;
     }
