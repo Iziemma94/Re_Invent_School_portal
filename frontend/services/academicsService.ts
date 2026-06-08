@@ -15,13 +15,14 @@ export async function getStudentReportCards() {
   return response.data;
 }
 
-export async function downloadStudentReportCardPdf(term: string) {
+export async function downloadStudentReportCardPdf(reportCardId: number) {
   const response = await api.get(
-    `/academics/student/report-card/pdf/?term=${encodeURIComponent(term)}`,
+    `/academics/student/report-card/pdf/${reportCardId}/`,
     {
       responseType: "blob",
     }
   );
+
   return response.data;
 }
 

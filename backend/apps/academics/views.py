@@ -1331,7 +1331,7 @@ class StudentReportCardHTMLView(APIView):
 class StudentReportCardPDFView(APIView):
     permission_classes = [IsAuthenticated, IsStudentUserRole]
 
-    def get(self, request):
+    def get(self, request, report_card_id=None):
         term_name = request.GET.get("term")
 
         student = get_object_or_404(StudentProfile, user=request.user)
@@ -1358,22 +1358,31 @@ class StudentReportCardPDFView(APIView):
             "term__session",
         ).prefetch_related("traits")
 
-        if term_name and term_name != "All":
+        if report_card_id:
+            report_card = get_object_or_404(report_cards_qs, id=report_card_id)
+            results_qs = results_qs.filter(term_id=report_card.term_id)
+        elif term_name and term_name != "All":
             normalized_term = term_name.lower().split()[0]
             
-            term_filter = (
+            report_card = report_cards_qs.filter(
                 Q(term__name__iexact=term_name)
                 | Q(term__name__iexact=normalized_term)
                 | Q(term__name__icontains=normalized_term)
-            )
+            ).first()
             
-            results_qs = results_qs.filter(term_filter)
-            report_card = report_cards_qs.filter(term_filter).first()
+            if not report_card:
+                return Response(
+                    {"detail": "No report card found for the selected term."},
+                    status=404,
+                )
+            
+            results_qs = results_qs.filter(term_id=report_card.term_id)
         else:
             report_card = report_cards_qs.first()
-
-        if not report_card:
-            return Response({"detail": "No report card found for the selected term."}, status=404)
+            
+            if report_card:
+                results_qs = results_qs.filter(term_id=report_card.term_id)
+        
 
         results = []
         total_sum = 0

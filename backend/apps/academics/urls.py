@@ -68,7 +68,8 @@ urlpatterns = [
     path("admin/class-teacher-assignments/<int:assignment_id>/", AdminClassTeacherAssignmentUpdateDeleteView.as_view(), name="admin-class-teacher-assignment-update-delete",),
     path("admin/report-cards/<int:report_card_id>/head-teacher-remark/", AdminUpdateHeadTeacherRemarkView.as_view(), name="admin-update-head-teacher-remark",),
 
-    path("student/report-cards/<int:report_card_id>/traits/", StudentReportCardTraitsView.as_view(), name="student-report-card-traits",),
+    path("student/report-cards/<int:report_card_id>/traits/", StudentReportCardTraitsView.as_view(), name="student-report-card-traits"),
     path("student/report-card/html/", StudentReportCardHTMLView.as_view(), name="student-report-card-html"),
     path("student/report-card/pdf/", StudentReportCardPDFView.as_view(), name="student-report-card-pdf"),
+    path("student/report-card/pdf/<int:report_card_id>/", StudentReportCardPDFView.as_view(), name="student-report-card-pdf-by-id"),
 ]

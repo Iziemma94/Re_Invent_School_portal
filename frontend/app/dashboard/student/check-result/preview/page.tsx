@@ -229,7 +229,7 @@ function StudentReportCardPreviewContent() {
       setDownloadingPdf(true);
       setError("");
 
-      const blob = await downloadStudentReportCardPdf(verifiedTermName);
+      const blob = await downloadStudentReportCardPdf(reportCard.id);
       const url = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
