@@ -225,28 +225,40 @@ function StudentReportCardPreviewContent() {
   }
 
   async function handleDownloadPdf() {
-    try {
-      setDownloadingPdf(true);
-      setError("");
+  try {
+    setDownloadingPdf(true);
+    setError("");
 
-      const blob = await downloadStudentReportCardPdf(reportCard.id);
-      const url = window.URL.createObjectURL(blob);
+    const selectedReportCard = reportCards.find(
+      (item) => item.term_name === verifiedTermName
+    );
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `report-card-${verifiedTermName.replace(/\s+/g, "-").toLowerCase()}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to download PDF.");
-    } finally {
-      setDownloadingPdf(false);
+    if (!selectedReportCard) {
+      setError("Could not find the selected report card.");
+      return;
     }
+
+    const blob = await downloadStudentReportCardPdf(selectedReportCard.id);
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `report-card-${verifiedTermName
+      .replace(/\s+/g, "-")
+      .toLowerCase()}.pdf`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+    setError("Failed to download PDF.");
+  } finally {
+    setDownloadingPdf(false);
   }
+}
 
   function handleBack() {
     router.push("/dashboard/student/check-result");
