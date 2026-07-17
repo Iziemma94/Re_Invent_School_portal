@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -925,40 +926,120 @@ class AdminResultPinListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        student_id = request.data.get("student")
         term_id = request.data.get("term")
+        student_ids = request.data.get("students")
 
-        if not student_id or not term_id:
+        # Continue supporting the old single-student request.
+        if not student_ids:
+            single_student_id = request.data.get("student")
+
+            if single_student_id:
+                student_ids = [single_student_id]
+
+        if not term_id:
             return Response(
-                {"detail": "student and term are required."},
+                {"detail": "term is required."},
                 status=400,
             )
 
-        student = get_object_or_404(StudentProfile, id=student_id)
-        term = get_object_or_404(Term, id=term_id)
-
-        existing_pin = ResultPin.objects.filter(
-            student=student,
-            term=term,
-        ).first()
-
-        if existing_pin:
-            serializer = ResultPinSerializer(existing_pin)
+        if not student_ids or not isinstance(student_ids, list):
             return Response(
-                {
-                    "detail": "A PIN already exists for this student and term.",
-                    "pin": serializer.data,
-                },
-                status=200,
+                {"detail": "Select at least one student."},
+                status=400,
             )
 
-        pin = ResultPin.objects.create(
-            student=student,
-            term=term,
+        try:
+            normalized_student_ids = [
+                int(student_id)
+                for student_id in student_ids
+            ]
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "All student IDs must be valid numbers."},
+                status=400,
+            )
+
+        term = get_object_or_404(Term, id=term_id)
+
+        students = StudentProfile.objects.select_related(
+            "user"
+        ).filter(
+            id__in=normalized_student_ids,
         )
 
-        serializer = ResultPinSerializer(pin)
-        return Response(serializer.data, status=201)
+        found_student_ids = set(
+            students.values_list("id", flat=True)
+        )
+
+        invalid_student_ids = [
+            student_id
+            for student_id in normalized_student_ids
+            if student_id not in found_student_ids
+        ]
+
+        if invalid_student_ids:
+            return Response(
+                {
+                    "detail": "Some selected students were not found.",
+                    "invalid_student_ids": invalid_student_ids,
+                },
+                status=400,
+            )
+
+        created_pins = []
+        skipped_students = []
+
+        with transaction.atomic():
+            for student in students:
+                result_pin, created = ResultPin.objects.get_or_create(
+                    student=student,
+                    term=term,
+                )
+
+                if created:
+                    created_pins.append(result_pin)
+                else:
+                    skipped_students.append(
+                        {
+                            "id": student.id,
+                            "student_name": (
+                                student.user.full_name
+                                or student.user.username
+                            ),
+                            "admission_number": student.admission_number,
+                            "pin": result_pin.pin,
+                        }
+                    )
+
+        serializer = ResultPinSerializer(
+            created_pins,
+            many=True,
+        )
+
+        created_count = len(created_pins)
+        skipped_count = len(skipped_students)
+
+        if created_count == 0:
+            message = (
+                "No new PINs were generated. "
+                "All selected students already have PINs for this term."
+            )
+        else:
+            message = (
+                f"{created_count} result PIN(s) generated successfully. "
+                f"{skipped_count} existing PIN(s) skipped."
+            )
+
+        return Response(
+            {
+                "message": message,
+                "created_count": created_count,
+                "skipped_count": skipped_count,
+                "pins": serializer.data,
+                "skipped_students": skipped_students,
+            },
+            status=201 if created_count > 0 else 200,
+        )
     
 class AdminSubjectListView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]

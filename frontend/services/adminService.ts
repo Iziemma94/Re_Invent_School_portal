@@ -213,6 +213,18 @@ export async function createAdminResultPin(payload: {
   return response.data;
 }
 
+export async function createAdminResultPins(payload: {
+  students: number[];
+  term: number;
+}) {
+  const response = await api.post(
+    "/academics/admin/result-pins/",
+    payload
+  );
+
+  return response.data;
+}
+
 /* =========================
    ASSIGNMENTS
 ========================= */
