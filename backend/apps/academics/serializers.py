@@ -18,10 +18,48 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 class ClassSubjectSerializer(serializers.ModelSerializer):
-    subject_name = serializers.CharField(source="subject.name", read_only=True)
-    class_name = serializers.CharField(source="school_class.name", read_only=True)
-    class_arm = serializers.CharField(source="school_class.arm", read_only=True)
-    session_name = serializers.CharField(source="session.name", read_only=True)
+    subject_name = serializers.CharField(
+        source="subject.name",
+        read_only=True,
+    )
+    subject_code = serializers.CharField(
+        source="subject.code",
+        read_only=True,
+    )
+
+    class_name = serializers.CharField(
+        source="school_class.name",
+        read_only=True,
+    )
+    class_arm = serializers.CharField(
+        source="school_class.arm",
+        read_only=True,
+    )
+
+    branch = serializers.IntegerField(
+        source="school_class.branch_id",
+        read_only=True,
+    )
+    branch_name = serializers.CharField(
+        source="school_class.branch.name",
+        read_only=True,
+    )
+
+    section = serializers.IntegerField(
+        source="school_class.section_id",
+        read_only=True,
+    )
+    section_name = serializers.CharField(
+        source="school_class.section.name",
+        read_only=True,
+    )
+
+    session_name = serializers.CharField(
+        source="session.name",
+        read_only=True,
+    )
+
+    display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ClassSubject
@@ -30,11 +68,31 @@ class ClassSubjectSerializer(serializers.ModelSerializer):
             "school_class",
             "class_name",
             "class_arm",
+            "branch",
+            "branch_name",
+            "section",
+            "section_name",
             "subject",
             "subject_name",
+            "subject_code",
             "session",
             "session_name",
+            "display_name",
         ]
+
+    def get_display_name(self, obj):
+        """Return a readable class-subject description."""
+        class_name = obj.school_class.name
+        class_arm = obj.school_class.arm or ""
+        subject_name = obj.subject.name
+        session_name = obj.session.name if obj.session else ""
+
+        full_class_name = f"{class_name} {class_arm}".strip()
+
+        if session_name:
+            return f"{subject_name} — {full_class_name} — {session_name}"
+
+        return f"{subject_name} — {full_class_name}"
         
 
 class AdminCreateClassSubjectSerializer(serializers.Serializer):

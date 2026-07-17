@@ -241,6 +241,18 @@ export async function createAdminAssignment(payload: {
   return response.data;
 }
 
+export async function createAdminAssignments(payload: {
+  teacher: number;
+  class_subjects: number[];
+}) {
+  const response = await api.post(
+    "/academics/admin/assignments/create/",
+    payload
+  );
+
+  return response.data;
+}
+
 export async function updateAdminAssignment(
   assignmentId: number,
   payload: {

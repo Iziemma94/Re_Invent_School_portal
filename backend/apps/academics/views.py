@@ -1230,53 +1230,139 @@ class AdminAssignmentCreateView(APIView):
 
     def post(self, request):
         teacher_id = request.data.get("teacher")
-        class_subject_id = request.data.get("class_subject")
+        class_subject_ids = request.data.get("class_subjects")
 
-        if not teacher_id or not class_subject_id:
+        # Backward compatibility for the old single-assignment payload.
+        if not class_subject_ids:
+            single_class_subject_id = request.data.get("class_subject")
+
+            if single_class_subject_id:
+                class_subject_ids = [single_class_subject_id]
+
+        if not teacher_id:
             return Response(
-                {"detail": "teacher and class_subject are required."},
+                {"detail": "teacher is required."},
+                status=400,
+            )
+
+        if not class_subject_ids or not isinstance(class_subject_ids, list):
+            return Response(
+                {"detail": "Select at least one class subject."},
+                status=400,
+            )
+
+        try:
+            normalized_class_subject_ids = [
+                int(class_subject_id)
+                for class_subject_id in class_subject_ids
+            ]
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "All class subject IDs must be valid numbers."},
                 status=400,
             )
 
         teacher = get_object_or_404(
-            TeacherProfile.objects.prefetch_related("branches", "sections"),
-            id=teacher_id
-        )
-        class_subject = get_object_or_404(
-            ClassSubject.objects.select_related("school_class", "school_class__branch", "school_class__section"),
-            id=class_subject_id
+            TeacherProfile.objects.prefetch_related(
+                "branches",
+                "sections",
+            ),
+            id=teacher_id,
         )
 
-        if not teacher_can_handle_class_subject(teacher, class_subject):
+        class_subjects = ClassSubject.objects.select_related(
+            "subject",
+            "school_class",
+            "school_class__branch",
+            "school_class__section",
+        ).filter(
+            id__in=normalized_class_subject_ids,
+        )
+
+        found_ids = set(
+            class_subjects.values_list("id", flat=True)
+        )
+
+        invalid_ids = [
+            class_subject_id
+            for class_subject_id in normalized_class_subject_ids
+            if class_subject_id not in found_ids
+        ]
+
+        if invalid_ids:
             return Response(
                 {
-                    "detail": (
-                        "This teacher cannot be assigned to the selected class subject "
-                        "because the class branch/section is outside the teacher's allowed branches/sections."
-                    )
+                    "detail": "Some selected class subjects were not found.",
+                    "invalid_class_subject_ids": invalid_ids,
                 },
                 status=400,
             )
 
-        exists = TeachingAssignment.objects.filter(
-            teacher=teacher,
-            class_subject=class_subject,
-        ).exists()
+        created_assignments = []
+        skipped_assignments = []
+        rejected_assignments = []
 
-        if exists:
-            return Response(
-                {"detail": "This teacher is already assigned to that class subject."},
-                status=400,
-            )
+        with transaction.atomic():
+            for class_subject in class_subjects:
+                if not teacher_can_handle_class_subject(
+                    teacher,
+                    class_subject,
+                ):
+                    rejected_assignments.append(
+                        {
+                            "class_subject": class_subject.id,
+                            "subject_name": class_subject.subject.name,
+                            "class_name": class_subject.school_class.name,
+                            "reason": (
+                                "The class branch or section is outside "
+                                "the teacher's allowed branches or sections."
+                            ),
+                        }
+                    )
+                    continue
 
-        assignment = TeachingAssignment.objects.create(
-            teacher=teacher,
-            class_subject=class_subject,
+                assignment, created = (
+                    TeachingAssignment.objects.get_or_create(
+                        teacher=teacher,
+                        class_subject=class_subject,
+                    )
+                )
+
+                if created:
+                    created_assignments.append(assignment)
+                else:
+                    skipped_assignments.append(
+                        {
+                            "class_subject": class_subject.id,
+                            "subject_name": class_subject.subject.name,
+                            "class_name": class_subject.school_class.name,
+                        }
+                    )
+
+        serializer = TeachingAssignmentSerializer(
+            created_assignments,
+            many=True,
         )
 
+        created_count = len(created_assignments)
+        skipped_count = len(skipped_assignments)
+        rejected_count = len(rejected_assignments)
+
         return Response(
-            {"message": "Assignment created successfully.", "id": assignment.id},
-            status=201,
+            {
+                "message": (
+                    f"{created_count} assignment(s) created. "
+                    f"{skipped_count} existing assignment(s) skipped. "
+                    f"{rejected_count} assignment(s) rejected."
+                ),
+                "created_count": created_count,
+                "skipped_count": skipped_count,
+                "rejected_count": rejected_count,
+                "assignments": serializer.data,
+                "skipped_assignments": skipped_assignments,
+                "rejected_assignments": rejected_assignments,
+            },
+            status=201 if created_count > 0 else 200,
         )
 
 
