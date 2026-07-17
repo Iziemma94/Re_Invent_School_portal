@@ -408,11 +408,15 @@ export async function getAdminStudentFees() {
   return response.data;
 }
 
-export async function assignAdminStudentFee(payload: {
-  student: number;
+export async function assignAdminStudentFees(payload: {
+  students: number[];
   fee_structure: number;
 }) {
-  const response = await api.post("/finance/admin/student-fees/", payload);
+  const response = await api.post(
+    "/finance/admin/student-fees/",
+    payload
+  );
+
   return response.data;
 }
 
@@ -442,5 +446,39 @@ export async function createAdminPayment(payload: {
   reference?: string;
 }) {
   const response = await api.post("/finance/admin/payments/", payload);
+  return response.data;
+}
+
+export interface FeeAssignmentStudentFilters {
+  branch?: number | string;
+  section?: number | string;
+  school_class?: number | string;
+}
+
+export async function getFeeAssignmentStudents(
+  filters?: FeeAssignmentStudentFilters
+) {
+  const search = new URLSearchParams();
+
+  if (filters?.branch) {
+    search.append("branch", String(filters.branch));
+  }
+
+  if (filters?.section) {
+    search.append("section", String(filters.section));
+  }
+
+  if (filters?.school_class) {
+    search.append("school_class", String(filters.school_class));
+  }
+
+  const query = search.toString();
+
+  const response = await api.get(
+    `/finance/admin/fee-assignment-students/${
+      query ? `?${query}` : ""
+    }`
+  );
+
   return response.data;
 }

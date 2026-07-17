@@ -1,10 +1,11 @@
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsStudentUserRole, IsAdminUserRole
-from apps.students.models import StudentProfile
+from apps.students.models import StudentProfile, StudentEnrollment
 
 from .models import FeeStructure, StudentFee, StudentPayment
 from .serializers import (
@@ -146,36 +147,123 @@ class AdminStudentFeeAssignListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        student_id = request.data.get("student")
         fee_structure_id = request.data.get("fee_structure")
+        student_ids = request.data.get("students")
 
-        if not student_id or not fee_structure_id:
+        # Backward compatibility:
+        # still allow the old single-student payload.
+        if not student_ids:
+            single_student_id = request.data.get("student")
+
+            if single_student_id:
+                student_ids = [single_student_id]
+
+        if not fee_structure_id:
             return Response(
-                {"detail": "student and fee_structure are required."},
+                {"detail": "fee_structure is required."},
                 status=400,
             )
 
-        student = get_object_or_404(StudentProfile, id=student_id)
-        fee_structure = get_object_or_404(FeeStructure, id=fee_structure_id)
+        if not student_ids or not isinstance(student_ids, list):
+            return Response(
+                {"detail": "Select at least one student."},
+                status=400,
+            )
 
-        student_fee, created = StudentFee.objects.get_or_create(
-            student=student,
-            fee_structure=fee_structure,
+        try:
+            normalized_student_ids = [
+                int(student_id)
+                for student_id in student_ids
+            ]
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "All student IDs must be valid numbers."},
+                status=400,
+            )
+
+        fee_structure = get_object_or_404(
+            FeeStructure,
+            id=fee_structure_id,
         )
 
-        if not created:
+        students = StudentProfile.objects.select_related(
+            "user"
+        ).filter(
+            id__in=normalized_student_ids,
+        )
+
+        found_student_ids = set(
+            students.values_list("id", flat=True)
+        )
+
+        invalid_student_ids = [
+            student_id
+            for student_id in normalized_student_ids
+            if student_id not in found_student_ids
+        ]
+
+        if invalid_student_ids:
             return Response(
-                {"detail": "This fee structure has already been assigned to the student."},
+                {
+                    "detail": "Some selected students were not found.",
+                    "invalid_student_ids": invalid_student_ids,
+                },
                 status=400,
             )
 
-        serializer = StudentFeeSerializer(student_fee)
+        created_assignments = []
+        skipped_students = []
+
+        with transaction.atomic():
+            for student in students:
+                student_fee, created = StudentFee.objects.get_or_create(
+                    student=student,
+                    fee_structure=fee_structure,
+                )
+
+                if created:
+                    created_assignments.append(student_fee)
+                else:
+                    skipped_students.append(
+                        {
+                            "id": student.id,
+                            "student_name": (
+                                student.user.full_name
+                                or student.user.username
+                            ),
+                            "admission_number": student.admission_number,
+                        }
+                    )
+
+        serializer = StudentFeeSerializer(
+            created_assignments,
+            many=True,
+        )
+
+        created_count = len(created_assignments)
+        skipped_count = len(skipped_students)
+
+        if created_count == 0:
+            message = (
+                "No new fee assignments were created. "
+                "The selected fee structure was already assigned "
+                "to all selected students."
+            )
+        else:
+            message = (
+                f"{created_count} fee assignment(s) created successfully. "
+                f"{skipped_count} duplicate assignment(s) skipped."
+            )
+
         return Response(
             {
-                "message": "Fee assigned to student successfully.",
-                "student_fee": serializer.data,
+                "message": message,
+                "created_count": created_count,
+                "skipped_count": skipped_count,
+                "student_fees": serializer.data,
+                "skipped_students": skipped_students,
             },
-            status=201,
+            status=201 if created_count > 0 else 200,
         )
 
 
@@ -246,3 +334,77 @@ class AdminStudentPaymentListCreateView(APIView):
                 status=201,
             )
         return Response(serializer.errors, status=400)
+    
+class AdminFeeAssignmentStudentsView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUserRole]
+
+    def get(self, request):
+        branch_id = request.GET.get("branch")
+        section_id = request.GET.get("section")
+        class_id = request.GET.get("school_class")
+
+        enrollments = StudentEnrollment.objects.filter(
+            is_active=True,
+        ).select_related(
+            "student",
+            "student__user",
+            "school_class",
+            "school_class__branch",
+            "school_class__section",
+        )
+
+        if branch_id:
+            enrollments = enrollments.filter(
+                school_class__branch_id=branch_id
+            )
+
+        if section_id:
+            enrollments = enrollments.filter(
+                school_class__section_id=section_id
+            )
+
+        if class_id:
+            enrollments = enrollments.filter(
+                school_class_id=class_id
+            )
+
+        enrollments = enrollments.order_by(
+            "school_class__branch__name",
+            "school_class__section__name",
+            "school_class__name",
+            "school_class__arm",
+            "student__user__full_name",
+            "student__user__username",
+        )
+
+        data = []
+
+        for enrollment in enrollments:
+            school_class = enrollment.school_class
+            student = enrollment.student
+
+            data.append({
+                "id": student.id,
+                "student_name": (
+                    student.user.full_name
+                    or student.user.username
+                ),
+                "admission_number": student.admission_number,
+                "branch": school_class.branch_id,
+                "branch_name": (
+                    school_class.branch.name
+                    if school_class.branch
+                    else "-"
+                ),
+                "section": school_class.section_id,
+                "section_name": (
+                    school_class.section.name
+                    if school_class.section
+                    else "-"
+                ),
+                "school_class": school_class.id,
+                "class_name": school_class.name,
+                "class_arm": school_class.arm,
+            })
+
+        return Response(data)

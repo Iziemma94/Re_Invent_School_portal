@@ -7,6 +7,7 @@ from .views import (
     AdminStudentFeeAssignListCreateView,
     AdminStudentFeeUpdateView,
     AdminStudentPaymentListCreateView,
+    AdminFeeAssignmentStudentsView,
 )
 
 urlpatterns = [
@@ -22,6 +23,12 @@ urlpatterns = [
         "admin/fee-structures/<int:fee_structure_id>/update/",
         AdminFeeStructureUpdateView.as_view(),
         name="admin-update-fee-structure",
+    ),
+
+    path(
+        "admin/fee-assignment-students/",
+        AdminFeeAssignmentStudentsView.as_view(),
+        name="admin-fee-assignment-students",
     ),
 
     path(
