@@ -83,7 +83,10 @@ interface SchoolClassItem {
 
 interface ClassSubjectItem {
   id: number;
+
   school_class: number;
+  school_class_id?: number;
+
   class_name: string;
   class_arm?: string | null;
 
@@ -203,38 +206,50 @@ export default function AdminAssignmentsPage() {
   }
 
   async function loadOptions() {
-    try {
-      setLoadingOptions(true);
-      setFormError("");
+  try {
+    setLoadingOptions(true);
+    setFormError("");
 
-      const [
-        teacherData,
-        branchData,
-        sectionData,
-        classData,
-        classSubjectData,
-      ] = await Promise.all([
-        getAssignmentTeachers(),
-        getBranches(),
-        getSections(),
-        getSchoolClasses(),
-        getAdminClassSubjects(),
-      ]);
+    const [
+      teacherData,
+      branchData,
+      sectionData,
+      classData,
+      classSubjectData,
+    ] = await Promise.all([
+      getAssignmentTeachers(),
+      getBranches(),
+      getSections(),
+      getSchoolClasses(),
+      getAdminClassSubjects(),
+    ]);
 
-      setTeachers(Array.isArray(teacherData) ? teacherData : []);
-      setBranches(Array.isArray(branchData) ? branchData : []);
-      setSections(Array.isArray(sectionData) ? sectionData : []);
-      setClasses(Array.isArray(classData) ? classData : []);
-      setClassSubjects(
-        Array.isArray(classSubjectData) ? classSubjectData : []
-      );
-    } catch (err) {
-      console.error(err);
-      setFormError("Failed to load assignment options.");
-    } finally {
-      setLoadingOptions(false);
-    }
+    setTeachers(Array.isArray(teacherData) ? teacherData : []);
+    setBranches(Array.isArray(branchData) ? branchData : []);
+    setSections(Array.isArray(sectionData) ? sectionData : []);
+    setClasses(Array.isArray(classData) ? classData : []);
+
+    console.log(
+  "Class Subjects API:",
+  JSON.stringify(classSubjectData, null, 2)
+);
+
+    const resolvedClassSubjects = Array.isArray(classSubjectData)
+      ? classSubjectData
+      : Array.isArray(classSubjectData?.results)
+      ? classSubjectData.results
+      : [];
+
+    console.log("Resolved Class Subjects:", resolvedClassSubjects);
+
+    setClassSubjects(resolvedClassSubjects);
+  } catch (err) {
+    console.error(err);
+    setFormError("Failed to load assignment options.");
+  } finally {
+    setLoadingOptions(false);
   }
+}
 
   useEffect(() => {
     loadAssignments();
@@ -275,31 +290,37 @@ export default function AdminAssignmentsPage() {
   }, [classes, selectedBranch, selectedSection]);
 
   const availableClassSubjects = useMemo(() => {
-    if (!selectedClass) {
-      return [];
-    }
+  if (!selectedClass) {
+    return [];
+  }
 
-    const query = subjectSearch.trim().toLowerCase();
+  const selectedClassId = Number(selectedClass);
+  const query = subjectSearch.trim().toLowerCase();
 
-    return classSubjects
-      .filter(
-        (item) => String(item.school_class) === selectedClass
-      )
-      .filter((item) => {
-        if (!query) {
-          return true;
-        }
-
-        return (
-          item.subject_name.toLowerCase().includes(query) ||
-          (item.subject_code || "").toLowerCase().includes(query) ||
-          (item.session_name || "").toLowerCase().includes(query)
-        );
-      })
-      .sort((first, second) =>
-        first.subject_name.localeCompare(second.subject_name)
+  return classSubjects
+    .filter((item) => {
+      const itemClassId = Number(
+        item.school_class ??
+        (item as ClassSubjectItem & { school_class_id?: number }).school_class_id
       );
-  }, [classSubjects, selectedClass, subjectSearch]);
+
+      return itemClassId === selectedClassId;
+    })
+    .filter((item) => {
+      if (!query) {
+        return true;
+      }
+
+      return (
+        item.subject_name.toLowerCase().includes(query) ||
+        (item.subject_code || "").toLowerCase().includes(query) ||
+        (item.session_name || "").toLowerCase().includes(query)
+      );
+    })
+    .sort((first, second) =>
+      first.subject_name.localeCompare(second.subject_name)
+    );
+}, [classSubjects, selectedClass, subjectSearch]);
 
   const allVisibleSubjectsSelected =
     availableClassSubjects.length > 0 &&
@@ -418,13 +439,18 @@ export default function AdminAssignmentsPage() {
   }
 
   function handleClassChange(
-    event: ChangeEvent<HTMLSelectElement>
-  ) {
-    setSelectedClass(event.target.value);
-    setSelectedClassSubjectIds([]);
-    setSubjectSearch("");
-    clearMessages();
-  }
+  event: ChangeEvent<HTMLSelectElement>
+) {
+  const classId = event.target.value;
+
+  console.log("Selected Class:", classId);
+  console.log("All Loaded Class Subjects:", classSubjects);
+
+  setSelectedClass(classId);
+  setSelectedClassSubjectIds([]);
+  setSubjectSearch("");
+  clearMessages();
+}
 
   function toggleClassSubject(classSubjectId: number) {
     setSelectedClassSubjectIds((previous) => {

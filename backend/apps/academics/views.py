@@ -1104,24 +1104,55 @@ class AdminClassSubjectListView(APIView):
             "subject",
             "school_class",
             "school_class__branch",
+            "school_class__section",
             "session",
-        ).order_by("school_class__name", "school_class__arm", "subject__name")
+        ).order_by(
+            "school_class__branch__name",
+            "school_class__section__name",
+            "school_class__name",
+            "school_class__arm",
+            "subject__name",
+        )
 
         data = [
             {
                 "id": item.id,
-                "subject_name": item.subject.name,
-                "subject_code": item.subject.code,
+
+                "school_class": item.school_class_id,
                 "class_name": item.school_class.name,
                 "class_arm": item.school_class.arm,
-                "branch_name": item.school_class.branch.name if item.school_class.branch else None,
-                "session_name": item.session.name if item.session else None,
+
+                "branch": item.school_class.branch_id,
+                "branch_name": (
+                    item.school_class.branch.name
+                    if item.school_class.branch
+                    else None
+                ),
+
+                "section": item.school_class.section_id,
+                "section_name": (
+                    item.school_class.section.name
+                    if item.school_class.section
+                    else None
+                ),
+
+                "subject": item.subject_id,
+                "subject_name": item.subject.name,
+                "subject_code": item.subject.code,
+
+                "session": item.session_id,
+                "session_name": (
+                    item.session.name
+                    if item.session
+                    else None
+                ),
+
                 "display_name": (
                     f"{item.subject.name}"
                     f"{f' ({item.subject.code})' if item.subject.code else ''} - "
                     f"{item.school_class.name}"
                     f"{f' {item.school_class.arm}' if item.school_class.arm else ''} - "
-                    f"{item.session.name}"
+                    f"{item.session.name if item.session else ''}"
                 ),
             }
             for item in class_subjects
