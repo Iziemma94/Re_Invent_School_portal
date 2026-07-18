@@ -1,3 +1,5 @@
+from decimal import Decimal, InvalidOperation
+
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from rest_framework import status, viewsets
@@ -286,106 +288,387 @@ class TeacherResultUploadView(APIView):
     permission_classes = [IsAuthenticated, IsTeacherUserRole]
 
     def post(self, request):
-        teacher = get_object_or_404(TeacherProfile, user=request.user)
+        teacher = get_object_or_404(
+            TeacherProfile,
+            user=request.user,
+        )
 
-        teaching_assignment_id = request.data.get("teaching_assignment")
-        student_id = request.data.get("student")
+        teaching_assignment_id = request.data.get(
+            "teaching_assignment"
+        )
         term_id = request.data.get("term")
-        continuous_assessment = request.data.get("continuous_assessment")
-        exam_score = request.data.get("exam_score")
+        results_data = request.data.get("results")
 
-        if not all([
-            teaching_assignment_id,
-            student_id,
-            term_id,
-            continuous_assessment is not None,
-            exam_score is not None,
-        ]):
+        # Backward compatibility with the old single-student form.
+        if not results_data:
+            student_id = request.data.get("student")
+            continuous_assessment = request.data.get(
+                "continuous_assessment"
+            )
+            exam_score = request.data.get("exam_score")
+
+            if student_id:
+                results_data = [
+                    {
+                        "student": student_id,
+                        "continuous_assessment": (
+                            continuous_assessment
+                        ),
+                        "exam_score": exam_score,
+                    }
+                ]
+
+        if not teaching_assignment_id:
             return Response(
                 {
                     "detail": (
-                        "teaching_assignment, student, term, "
-                        "continuous_assessment, and exam_score are required."
+                        "teaching_assignment is required."
+                    )
+                },
+                status=400,
+            )
+
+        if not term_id:
+            return Response(
+                {"detail": "term is required."},
+                status=400,
+            )
+
+        if not results_data or not isinstance(results_data, list):
+            return Response(
+                {
+                    "detail": (
+                        "Provide at least one student result."
                     )
                 },
                 status=400,
             )
 
         assignment = get_object_or_404(
-            TeachingAssignment,
+            TeachingAssignment.objects.select_related(
+                "class_subject",
+                "class_subject__school_class",
+            ),
             id=teaching_assignment_id,
             teacher=teacher,
         )
 
-        student = get_object_or_404(StudentProfile, id=student_id)
         term = get_object_or_404(Term, id=term_id)
-
         school_class = assignment.class_subject.school_class
 
-        is_enrolled = StudentEnrollment.objects.filter(
-            student=student,
-            school_class=school_class,
-            is_active=True,
-        ).exists()
+        student_ids = []
 
-        if not is_enrolled:
+        for item in results_data:
+            student_id = item.get("student")
+
+            if student_id:
+                try:
+                    student_ids.append(int(student_id))
+                except (TypeError, ValueError):
+                    return Response(
+                        {
+                            "detail": (
+                                "Every student ID must be valid."
+                            )
+                        },
+                        status=400,
+                    )
+
+        if not student_ids:
             return Response(
-                {"detail": "Selected student is not in this assigned class."},
+                {
+                    "detail": (
+                        "No valid students were supplied."
+                    )
+                },
                 status=400,
             )
 
-        result, created = Result.objects.update_or_create(
-            student=student,
-            teaching_assignment=assignment,
-            term=term,
-            defaults={
-                "continuous_assessment": continuous_assessment,
-                "exam_score": exam_score,
-            },
+        enrolled_student_ids = set(
+            StudentEnrollment.objects.filter(
+                school_class=school_class,
+                student_id__in=student_ids,
+                is_active=True,
+            ).values_list(
+                "student_id",
+                flat=True,
+            )
         )
 
-        serializer = ResultSerializer(result)
+        invalid_student_ids = [
+            student_id
+            for student_id in student_ids
+            if student_id not in enrolled_student_ids
+        ]
+
+        if invalid_student_ids:
+            return Response(
+                {
+                    "detail": (
+                        "Some selected students are not actively "
+                        "enrolled in this assigned class."
+                    ),
+                    "invalid_student_ids": invalid_student_ids,
+                },
+                status=400,
+            )
+
+        prepared_results = []
+        validation_errors = []
+
+        for row_number, item in enumerate(
+            results_data,
+            start=1,
+        ):
+            student_id = item.get("student")
+            ca_value = item.get("continuous_assessment")
+            exam_value = item.get("exam_score")
+
+            if (
+                student_id in (None, "")
+                or ca_value in (None, "")
+                or exam_value in (None, "")
+            ):
+                validation_errors.append(
+                    {
+                        "row": row_number,
+                        "student": student_id,
+                        "detail": (
+                            "Student, continuous assessment, "
+                            "and exam score are required."
+                        ),
+                    }
+                )
+                continue
+
+            try:
+                student_id = int(student_id)
+                ca_score = Decimal(str(ca_value))
+                exam_score = Decimal(str(exam_value))
+            except (TypeError, ValueError, InvalidOperation):
+                validation_errors.append(
+                    {
+                        "row": row_number,
+                        "student": student_id,
+                        "detail": (
+                            "CA and exam scores must be "
+                            "valid numbers."
+                        ),
+                    }
+                )
+                continue
+
+            if ca_score < 0 or exam_score < 0:
+                validation_errors.append(
+                    {
+                        "row": row_number,
+                        "student": student_id,
+                        "detail": (
+                            "Scores cannot be negative."
+                        ),
+                    }
+                )
+                continue
+
+            if ca_score + exam_score > 100:
+                validation_errors.append(
+                    {
+                        "row": row_number,
+                        "student": student_id,
+                        "detail": (
+                            "The total score cannot exceed 100."
+                        ),
+                    }
+                )
+                continue
+
+            prepared_results.append(
+                {
+                    "student_id": student_id,
+                    "continuous_assessment": ca_score,
+                    "exam_score": exam_score,
+                }
+            )
+
+        if validation_errors:
+            return Response(
+                {
+                    "detail": (
+                        "Some result rows contain invalid data."
+                    ),
+                    "errors": validation_errors,
+                },
+                status=400,
+            )
+
+        saved_results = []
+        created_count = 0
+        updated_count = 0
+
+        with transaction.atomic():
+            for item in prepared_results:
+                result, created = Result.objects.update_or_create(
+                    student_id=item["student_id"],
+                    teaching_assignment=assignment,
+                    term=term,
+                    defaults={
+                        "continuous_assessment": (
+                            item["continuous_assessment"]
+                        ),
+                        "exam_score": item["exam_score"],
+                    },
+                )
+
+                saved_results.append(result)
+
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
+
+        serializer = ResultSerializer(
+            saved_results,
+            many=True,
+        )
+
         return Response(
-            serializer.data,
-            status=201 if created else 200,
+            {
+                "message": (
+                    f"{created_count} result(s) created and "
+                    f"{updated_count} result(s) updated successfully."
+                ),
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "saved_count": len(saved_results),
+                "results": serializer.data,
+            },
+            status=201 if created_count > 0 else 200,
         )
     
 class TeacherAssignmentStudentsView(APIView):
     permission_classes = [IsAuthenticated, IsTeacherUserRole]
 
     def get(self, request):
-        teacher = get_object_or_404(TeacherProfile, user=request.user)
+        teacher = get_object_or_404(
+            TeacherProfile,
+            user=request.user,
+        )
+
         teaching_assignment_id = request.GET.get("teaching_assignment")
+        term_id = request.GET.get("term")
 
         if not teaching_assignment_id:
             return Response(
-                {"detail": "teaching_assignment query parameter is required."},
+                {
+                    "detail": (
+                        "teaching_assignment query parameter is required."
+                    )
+                },
                 status=400,
             )
 
         assignment = get_object_or_404(
-            TeachingAssignment,
+            TeachingAssignment.objects.select_related(
+                "class_subject",
+                "class_subject__subject",
+                "class_subject__school_class",
+            ),
             id=teaching_assignment_id,
             teacher=teacher,
         )
+
+        term = None
+
+        if term_id:
+            term = get_object_or_404(Term, id=term_id)
 
         school_class = assignment.class_subject.school_class
 
         enrollments = StudentEnrollment.objects.filter(
             school_class=school_class,
             is_active=True,
-        ).select_related("student__user")
+        ).select_related(
+            "student",
+            "student__user",
+        ).order_by(
+            "student__user__full_name",
+            "student__user__username",
+        )
 
-        data = [
-            {
-                "id": enrollment.student.id,
-                "student_name": enrollment.student.user.full_name or enrollment.student.user.username,
-                "admission_number": enrollment.student.admission_number,
+        existing_results = {}
+
+        if term:
+            results = Result.objects.filter(
+                teaching_assignment=assignment,
+                term=term,
+                student_id__in=enrollments.values_list(
+                    "student_id",
+                    flat=True,
+                ),
+            )
+
+            existing_results = {
+                result.student_id: result
+                for result in results
             }
-            for enrollment in enrollments
-        ]
 
-        return Response(data)
+        data = []
+
+        for enrollment in enrollments:
+            student = enrollment.student
+            existing_result = existing_results.get(student.id)
+
+            data.append(
+                {
+                    "id": student.id,
+                    "student_name": (
+                        student.user.full_name
+                        or student.user.username
+                    ),
+                    "admission_number": student.admission_number,
+                    "result_id": (
+                        existing_result.id
+                        if existing_result
+                        else None
+                    ),
+                    "continuous_assessment": (
+                        str(existing_result.continuous_assessment)
+                        if existing_result
+                        else ""
+                    ),
+                    "exam_score": (
+                        str(existing_result.exam_score)
+                        if existing_result
+                        else ""
+                    ),
+                    "total_score": (
+                        str(existing_result.total_score)
+                        if existing_result
+                        else "0"
+                    ),
+                    "has_existing_result": bool(existing_result),
+                }
+            )
+
+        return Response(
+            {
+                "assignment": {
+                    "id": assignment.id,
+                    "subject_name": (
+                        assignment.class_subject.subject.name
+                    ),
+                    "class_name": school_class.name,
+                    "class_arm": school_class.arm,
+                },
+                "term": {
+                    "id": term.id,
+                    "name": term.get_name_display(),
+                }
+                if term
+                else None,
+                "students": data,
+            }
+        )
     
 class TeacherClassTeacherAssignmentsView(APIView):
     permission_classes = [IsAuthenticated, IsTeacherUserRole]

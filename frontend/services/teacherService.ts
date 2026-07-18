@@ -24,10 +24,44 @@ export async function uploadTeacherNote(formData: FormData) {
   return response.data;
 }
 
-export async function getStudentsForAssignment(teachingAssignmentId: string) {
-  const response = await api.get(
-    `/academics/teacher/assignment-students/?teaching_assignment=${teachingAssignmentId}`
+export async function getStudentsForAssignment(
+  teachingAssignmentId: string,
+  termId?: string
+) {
+  const search = new URLSearchParams();
+
+  search.append(
+    "teaching_assignment",
+    teachingAssignmentId
   );
+
+  if (termId) {
+    search.append("term", termId);
+  }
+
+  const response = await api.get(
+    `/academics/teacher/assignment-students/?${search.toString()}`
+  );
+
+  return response.data;
+}
+
+export interface BulkResultRow {
+  student: number;
+  continuous_assessment: string;
+  exam_score: string;
+}
+
+export async function uploadTeacherResultsBulk(payload: {
+  teaching_assignment: number;
+  term: number;
+  results: BulkResultRow[];
+}) {
+  const response = await api.post(
+    "/academics/teacher/results/upload/",
+    payload
+  );
+
   return response.data;
 }
 
